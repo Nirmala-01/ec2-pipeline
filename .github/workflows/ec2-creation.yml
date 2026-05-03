@@ -1,0 +1,51 @@
+name: 🚀 EC2 Instance Creation Pipeline
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  create-ec2:
+    name: Provision EC2 Instance
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+
+    steps:
+      - name: ⬇️ Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set Up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 📦 Install Dependencies
+        run: |
+          pip install boto3
+
+      - name: 🔐 Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: 🖥️ Create EC2 Instance
+        run: python scripts/create_ec2.py
+        env:
+          EC2_AMI_ID: ${{ secrets.EC2_AMI_ID }}
+          EC2_INSTANCE_TYPE: ${{ vars.EC2_INSTANCE_TYPE || 't3.micro' }}
+          EC2_KEY_NAME: ${{ secrets.EC2_KEY_NAME }}
+          EC2_SUBNET_ID: ${{ secrets.EC2_SUBNET_ID }}
+          EC2_SECURITY_GROUP_ID: ${{ secrets.EC2_SECURITY_GROUP_ID }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+
+      - name: 📋 Upload Instance Info
+        uses: actions/upload-artifact@v4
+        with:
+          name: ec2-instance-info
+          path: ec2_instance_info.json
+          retention-days: 30
