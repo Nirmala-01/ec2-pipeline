@@ -11,7 +11,7 @@ jobs:
   create-ec2:
     name: Provision EC2 Instance
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true || github.event_name = 'worflow_dispatch'
 
     steps:
       - name: ⬇️ Checkout Repository
